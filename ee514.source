@@ -1,0 +1,19 @@
+#!/bin/bash
+# please refer to below link to check the compatibility of CUDA and GCC
+# https://www.google.com/search?sxsrf=ALeKk01o9x3Sxv-007zPXgVgK3j5Mnn7_w%3A1614323787712&ei=S6A4YMz9KobN-Qb6pq64Cw&q=cuda+10.2+gcc+version&oq=cuda+10.2+gcc+version&gs_lcp=Cgdnd3Mtd2l6EAMyBAgjECcyBggAEAcQHjIGCAAQCBAeMgYIABAIEB46BwgjELADECc6BwgAEEcQsAM6BwgjELACECc6CAgAEAgQBxAeUPPl0gFY1e7SAWC58NIBaAFwAngAgAFuiAGiApIBAzIuMZgBAKABAaoBB2d3cy13aXrIAQnAAQE&sclient=gws-wiz&ved=0ahUKEwiMz6zfgIfvAhWGZt4KHXqTC7cQ4dUDCA0&uact=5
+
+ORIGINAL_CUDA_VERSION=cuda-x.x
+#ORIGINAL_CUDA_VERSION=cuda
+
+TARGET_GCC_VERSION=9
+
+# change cuda version to 11.7
+sed -i 's/'"${ORIGINAL_CUDA_VERSION}"'/cuda-11.7/g' ~/.bashrc
+
+mkdir ~/bin
+
+# adjust gcc/g++ version
+ln -s /usr/bin/gcc-$TARGET_GCC_VERSION ~/bin/gcc
+ln -s /usr/bin/g++-$TARGET_GCC_VERSION ~/bin/g++
+
+echo "export PATH=~/bin:\$PATH" >> ~/.bashrc
