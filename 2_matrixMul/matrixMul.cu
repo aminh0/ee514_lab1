@@ -53,12 +53,56 @@ void computeRefMatrixMul(float *C, const float *A, const float *B, unsigned int 
 __global__ 
 void matrixMul_naive(float* C, float* A, float* B, int wA, int wB) {
 	// TODO: fill me
+  int row = blockIdx.y*blockDim.y + threadIdx.y;//row index
+  int col = blockIdx.x*blockDim.x + threadIdx.x;//col index
+
+  if(row < wA && col < wB){
+    float Cvalue = 0;
+
+    for(int k = 0; k < wA; ++k){
+      Cvalue += A[row * wA + k] * B[k * wB + col];
+    }
+
+    C[row * wB + col] = Cvalue;
+  }
 }
 
 __global__ 
 void matrixMul_shmem( float* C, float* A, float* B, int wA, int wB)
 {
 	// TODO: fill me
+  // Block index
+  int bx = blockIdx.x;
+  int by = blockIdx.y;
+  // Thread index
+  int tx = threadIdx.x;
+  int ty = threadIdx.y;
+  //Allocate shared memory for A and B tiles
+  __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
+  __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
+  //Index of the first sub-matrix of A processed by the block
+  int aBegin = wA * BLOCK_SIZE * by;
+  //Index of the first sub-matrix of B processed by the block
+  int bBegin = BLOCK_SIZE * bx;
+  //Output value for the thread
+  float Csub = 0;
+  //Loop over the tiles of the input matrices
+  for (int k = 0; k < (wA/BLOCK_SIZE); ++k){
+    // Load the tiles into shared memory(all threads participate)
+    As[ty][tx] = A[aBegin + wA * ty + (k * BLOCK_SIZE + tx)];
+    Bs[ty][tx] = B[bBegin + wB * (k *BLOCK_SIZE + ty) + tx];
+    //Syncrhonize to make sure all threads have loaded their tiles;
+    __syncthreads();
+    //Performance the computation of the tile
+    for (int i = 0; i < BLOCK_SIZE; ++i){
+      Csub += As[ty][i] * Bs[i][tx];
+    }
+    //Syncrhonize to make sure all threads are done computing before 
+    __syncthreads();
+  }
+  //Write the result back to global memory
+  int c = wB * BLOCK_SIZE * by + BLOCK_SIZE *bx;
+  C[c + wB * ty + tx] = Csub;
 }
 
 void randomInitialization(float *data, int size) {
